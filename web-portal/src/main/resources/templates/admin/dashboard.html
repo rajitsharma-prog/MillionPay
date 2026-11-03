@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head(${pageTitle})}"></head>
+
+<body>
+<div class="app-shell">
+
+    <aside th:replace="~{fragments/layout :: sidebar(${activeNav})}"></aside>
+
+    <div class="main">
+
+        <header th:replace="~{fragments/layout :: topbar(${pageTitle}, '/admin', false)}"></header>
+
+        <main class="content">
+
+            <div th:replace="~{fragments/layout :: flash}"></div>
+
+            <div class="page-header">
+                <div>
+                    <h1>Platform administration</h1>
+                    <p>Onboard merchants, review payments and run settlements across the platform.</p>
+                </div>
+                <a class="btn btn-outline" th:href="@{/admin}">Refresh</a>
+            </div>
+
+            <section class="kpi-grid">
+                <div class="kpi-card">
+                    <p class="kpi-label">Merchants</p>
+                    <p class="kpi-value" th:text="${merchantCount}">0</p>
+                    <p class="kpi-hint">Onboarded on the platform</p>
+                </div>
+                <div class="kpi-card">
+                    <p class="kpi-label">KYC verified</p>
+                    <p class="kpi-value" th:text="${verifiedCount}">0</p>
+                    <p class="kpi-hint">Ready to accept payments</p>
+                </div>
+                <div class="kpi-card">
+                    <p class="kpi-label">Payments</p>
+                    <p class="kpi-value" th:text="${paymentCount}">0</p>
+                    <p class="kpi-hint">All merchants, all statuses</p>
+                </div>
+                <div class="kpi-card">
+                    <p class="kpi-label">Settlements</p>
+                    <p class="kpi-value" th:text="${settlementCount}">0</p>
+                    <p class="kpi-hint">Bank payouts recorded</p>
+                </div>
+            </section>
+
+            <section class="section" id="onboard">
+                <div class="section-header">
+                    <h2>Onboard merchant</h2>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <form method="post" th:action="@{/admin/merchants}">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="merchantName">Business name</label>
+                                    <input type="text" id="merchantName" name="name" required
+                                           placeholder="Acme Traders Pvt Ltd" autocomplete="off">
+                                </div>
+                                <div class="form-group">
+                                    <label for="merchantEmail">Contact email</label>
+                                    <input type="email" id="merchantEmail" name="email" required
+                                           placeholder="finance@acme.example" autocomplete="off">
+                                </div>
+                                <div class="form-group">
+                                    <label for="merchantBusinessType">Business type</label>
+                                    <select id="merchantBusinessType" name="businessType">
+                                        <option value="RETAIL">Retail</option>
+                                        <option value="ECOMMERCE">E-commerce</option>
+                                        <option value="SAAS">SaaS</option>
+                                        <option value="SERVICES">Services</option>
+                                        <option value="EDUCATION">Education</option>
+                                        <option value="OTHER" selected>Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-block">Onboard and run KYC</button>
+                                </div>
+                            </div>
+                            <p class="form-hint mt-2">
+                                KYC runs against the sandbox partner. A business name containing "reject" is rejected.
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="merchants">
+                <div class="section-header">
+                    <h2>Merchants</h2>
+                    <span class="muted" th:text="${#lists.size(merchants)} + ' total'">0 total</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Merchant ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Business type</th>
+                            <th>KYC status</th>
+                            <th>KYC reference</th>
+                            <th>Key ID</th>
+                            <th>Created</th>
+                            <th class="text-right">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="m : ${merchants}">
+                            <td class="mono" th:text="${m['id']}">merchant-id</td>
+                            <td th:text="${m['name']}">Merchant</td>
+                            <td th:text="${m['email']}">merchant@example.com</td>
+                            <td th:text="${m['businessType'] != null} ? ${m['businessType']} : '-'">OTHER</td>
+                            <td>
+                                <span class="pill"
+                                      th:classappend="${'pill-' + #strings.toLowerCase(m['kycStatus'])}"
+                                      th:text="${m['kycStatus']}">VERIFIED</span>
+                            </td>
+                            <td class="mono" th:text="${m['kycReference'] != null} ? ${m['kycReference']} : '-'">KYC-REF</td>
+                            <td class="mono" th:text="${m['keyId'] != null} ? ${m['keyId']} : '-'">pg_key_xxx</td>
+                            <td th:text="${m['createdAt']}">2024-01-01T00:00:00Z</td>
+                            <td class="text-right">
+                                <form class="inline-form"
+                                      method="post"
+                                      th:action="@{/admin/merchants/{id}/kyc(id=${m['id']})}">
+                                    <button type="submit" class="btn btn-secondary btn-sm">Re-run KYC</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(merchants)}">
+                            <td colspan="9" class="empty-state">No merchants onboarded yet.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="section" id="payments">
+                <div class="section-header">
+                    <h2>Payments</h2>
+                    <span class="muted" th:text="${#lists.size(payments)} + ' total'">0 total</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Payment ID</th>
+                            <th>Merchant ID</th>
+                            <th>Created</th>
+                            <th class="num">Amount</th>
+                            <th>Card</th>
+                            <th class="num">Risk score</th>
+                            <th>Status</th>
+                            <th>Acquirer reference</th>
+                            <th>Failure reason</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${payments}">
+                            <td class="mono" th:text="${p['id']}">payment-id</td>
+                            <td class="mono" th:text="${p['merchantId']}">merchant-id</td>
+                            <td th:text="${p['createdAt']}">2024-01-01T00:00:00Z</td>
+                            <td class="num">
+                                <span th:text="${p['currency']}">INR</span>
+                                <span th:text="${#numbers.formatDecimal(p['amount'] / 100.0, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                            </td>
+                            <td>
+                                <span th:if="${p['cardLast4'] != null}"
+                                      th:text="${p['cardNetwork']} + ' ****' + ${p['cardLast4']}">VISA ****1111</span>
+                                <span th:if="${p['cardLast4'] == null}" class="soft">-</span>
+                            </td>
+                            <td class="num" th:text="${p['riskScore'] != null} ? ${p['riskScore']} : '-'">0</td>
+                            <td>
+                                <span class="pill"
+                                      th:classappend="${'pill-' + #strings.toLowerCase(p['status'])}"
+                                      th:text="${p['status']}">CAPTURED</span>
+                            </td>
+                            <td class="mono" th:text="${p['acquirerReference'] != null} ? ${p['acquirerReference']} : '-'">ACQ-REF</td>
+                            <td th:text="${p['failureReason'] != null} ? ${p['failureReason']} : '-'">-</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(payments)}">
+                            <td colspan="9" class="empty-state">No payments have been created yet.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="section" id="settlements">
+                <div class="section-header">
+                    <h2>Settlements</h2>
+                    <form class="inline-form flex gap-2"
+                          method="post"
+                          th:action="@{/admin/settlements/run}">
+                        <select name="merchantId" aria-label="Merchant to settle">
+                            <option value="">All merchants</option>
+                            <option th:each="m : ${merchants}"
+                                    th:value="${m['id']}"
+                                    th:text="${m['name']}">Merchant</option>
+                        </select>
+                        <button type="submit" class="btn">Run settlement</button>
+                    </form>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Settlement ID</th>
+                            <th>Merchant ID</th>
+                            <th>Created</th>
+                            <th class="num">Amount</th>
+                            <th>Status</th>
+                            <th>Bank reference</th>
+                            <th>Failure reason</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="s : ${settlements}">
+                            <td class="mono" th:text="${s['id']}">settlement-id</td>
+                            <td class="mono" th:text="${s['merchantId']}">merchant-id</td>
+                            <td th:text="${s['createdAt']}">2024-01-01T00:00:00Z</td>
+                            <td class="num">
+                                <span th:text="${s['currency']}">INR</span>
+                                <span th:text="${#numbers.formatDecimal(s['amount'] / 100.0, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                            </td>
+                            <td>
+                                <span class="pill"
+                                      th:classappend="${'pill-' + #strings.toLowerCase(s['status'])}"
+                                      th:text="${s['status']}">PAID</span>
+                            </td>
+                            <td class="mono" th:text="${s['bankReference'] != null} ? ${s['bankReference']} : '-'">UTR123456789</td>
+                            <td th:text="${s['failureReason'] != null} ? ${s['failureReason']} : '-'">-</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(settlements)}">
+                            <td colspan="7" class="empty-state">No settlements have been run yet.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+</body>
+
+</html>

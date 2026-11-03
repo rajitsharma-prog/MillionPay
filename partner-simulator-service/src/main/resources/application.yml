@@ -1,0 +1,9 @@
+server:
+  port: ${PORT:8085}
+
+spring:
+  application:
+    name: partner-simulator-service
+
+simulator:
+  latency-ms: ${SIMULATOR_LATENCY_MS:0}

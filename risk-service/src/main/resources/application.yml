@@ -1,0 +1,12 @@
+server:
+  port: ${PORT:8084}
+
+spring:
+  application:
+    name: risk-service
+
+risk:
+  max-amount: ${RISK_MAX_AMOUNT:50000000}
+  reject-threshold: ${RISK_REJECT_THRESHOLD:80}
+  review-threshold: ${RISK_REVIEW_THRESHOLD:50}
+  velocity-limit: ${RISK_VELOCITY_LIMIT:5}

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head(${pageTitle})}"></head>
+
+<body>
+<div class="app-shell">
+
+    <aside th:replace="~{fragments/layout :: sidebar(${activeNav})}"></aside>
+
+    <div class="main">
+
+        <header th:replace="~{fragments/layout :: topbar(${pageTitle}, '/merchant', true)}"></header>
+
+        <main class="content">
+
+            <div th:replace="~{fragments/layout :: flash}"></div>
+
+            <div class="page-header">
+                <div>
+                    <h1 th:text="${selectedMerchant != null} ? ${selectedMerchant['name']} : 'No merchant selected'">Merchant</h1>
+                    <p th:if="${selectedMerchant != null}">
+                        <span th:text="${selectedMerchant['email']}">merchant@example.com</span>
+                        &middot; KYC
+                        <span class="pill"
+                              th:classappend="${'pill-' + #strings.toLowerCase(selectedMerchant['kycStatus'])}"
+                              th:text="${selectedMerchant['kycStatus']}">VERIFIED</span>
+                    </p>
+                    <p th:if="${selectedMerchant == null}">
+                        Onboard a merchant from the Admin dashboard to see payments and settlements here.
+                    </p>
+                </div>
+                <a class="btn btn-outline"
+                   th:href="@{/merchant(merchantId=${selectedMerchantId})}">Refresh</a>
+            </div>
+
+            <section class="kpi-grid" id="overview">
+                <div class="kpi-card">
+                    <p class="kpi-label">Gross volume</p>
+                    <p class="kpi-value"
+                       th:text="${#numbers.formatDecimal(grossVolume / 100.0, 1, 'COMMA', 2, 'POINT')}">0.00</p>
+                    <p class="kpi-hint">Captured payments, major units</p>
+                </div>
+                <div class="kpi-card">
+                    <p class="kpi-label">Captured payments</p>
+                    <p class="kpi-value" th:text="${capturedCount}">0</p>
+                    <p class="kpi-hint">Successfully captured</p>
+                </div>
+                <div class="kpi-card">
+                    <p class="kpi-label">Payable balance</p>
+                    <p class="kpi-value"
+                       th:text="${#numbers.formatDecimal(payableBalance / 100.0, 1, 'COMMA', 2, 'POINT')}">0.00</p>
+                    <p class="kpi-hint">Awaiting settlement</p>
+                </div>
+                <div class="kpi-card">
+                    <p class="kpi-label">Total payments</p>
+                    <p class="kpi-value" th:text="${#lists.size(payments)}">0</p>
+                    <p class="kpi-hint">All statuses</p>
+                </div>
+            </section>
+
+            <section class="section" id="payments">
+                <div class="section-header">
+                    <h2>Payments</h2>
+                    <span class="muted" th:text="${#lists.size(payments)} + ' total'">0 total</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Payment ID</th>
+                            <th>Created</th>
+                            <th class="num">Amount</th>
+                            <th>Method</th>
+                            <th>Card</th>
+                            <th>Status</th>
+                            <th>Customer</th>
+                            <th class="text-right">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${payments}">
+                            <td class="mono" th:text="${p['id']}">payment-id</td>
+                            <td th:text="${p['createdAt']}">2024-01-01T00:00:00Z</td>
+                            <td class="num">
+                                <span th:text="${p['currency']}">INR</span>
+                                <span th:text="${#numbers.formatDecimal(p['amount'] / 100.0, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                            </td>
+                            <td th:text="${p['method'] != null} ? ${p['method']} : '-'">CARD</td>
+                            <td>
+                                <span th:if="${p['cardLast4'] != null}"
+                                      th:text="${p['cardNetwork']} + ' ****' + ${p['cardLast4']}">VISA ****1111</span>
+                                <span th:if="${p['cardLast4'] == null}" class="soft">-</span>
+                            </td>
+                            <td>
+                                <span class="pill"
+                                      th:classappend="${'pill-' + #strings.toLowerCase(p['status'])}"
+                                      th:text="${p['status']}">CAPTURED</span>
+                            </td>
+                            <td th:text="${p['customerEmail'] != null} ? ${p['customerEmail']} : '-'">customer@example.com</td>
+                            <td class="text-right">
+                                <form class="inline-form"
+                                      method="post"
+                                      th:if="${p['status'] == 'AUTHORIZED'}"
+                                      th:action="@{/merchant/payments/{id}/capture(id=${p['id']})}">
+                                    <input type="hidden" name="merchantId" th:value="${selectedMerchantId}">
+                                    <button type="submit" class="btn btn-sm">Capture</button>
+                                </form>
+                                <span th:if="${p['status'] != 'AUTHORIZED'}" class="soft">-</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(payments)}">
+                            <td colspan="8" class="empty-state">No payments yet for this merchant.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="section" id="settlements">
+                <div class="section-header">
+                    <h2>Settlements</h2>
+                    <span class="muted" th:text="${#lists.size(settlements)} + ' total'">0 total</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Settlement ID</th>
+                            <th>Created</th>
+                            <th class="num">Amount</th>
+                            <th>Status</th>
+                            <th>Bank reference</th>
+                            <th>Failure reason</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="s : ${settlements}">
+                            <td class="mono" th:text="${s['id']}">settlement-id</td>
+                            <td th:text="${s['createdAt']}">2024-01-01T00:00:00Z</td>
+                            <td class="num">
+                                <span th:text="${s['currency']}">INR</span>
+                                <span th:text="${#numbers.formatDecimal(s['amount'] / 100.0, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                            </td>
+                            <td>
+                                <span class="pill"
+                                      th:classappend="${'pill-' + #strings.toLowerCase(s['status'])}"
+                                      th:text="${s['status']}">PAID</span>
+                            </td>
+                            <td class="mono" th:text="${s['bankReference'] != null} ? ${s['bankReference']} : '-'">UTR123456789</td>
+                            <td th:text="${s['failureReason'] != null} ? ${s['failureReason']} : '-'">-</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(settlements)}">
+                            <td colspan="6" class="empty-state">No settlements yet for this merchant.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+</body>
+
+</html>

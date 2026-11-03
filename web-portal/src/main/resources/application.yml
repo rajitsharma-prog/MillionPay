@@ -1,0 +1,21 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: web-portal
+  thymeleaf:
+    cache: false
+
+services:
+  payments:
+    url: ${PAYMENTS_SERVICE_URL:http://localhost:8081}
+  ledger:
+    url: ${LEDGER_SERVICE_URL:http://localhost:8082}
+  settlement:
+    url: ${SETTLEMENT_SERVICE_URL:http://localhost:8083}
+  risk:
+    url: ${RISK_SERVICE_URL:http://localhost:8084}
+
+portal:
+  environment-label: ${PORTAL_ENV_LABEL:Sandbox}

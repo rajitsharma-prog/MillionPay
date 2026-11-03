@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' | PayGate'">PayGate</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+
+<body>
+
+<aside class="sidebar" th:fragment="sidebar(active)">
+    <a class="sidebar-brand" th:href="@{/merchant}">
+        <span class="brand-mark">P</span>
+        <span>Pay<span class="brand-accent">Gate</span></span>
+    </a>
+
+    <div class="sidebar-section">
+        <div class="sidebar-heading">Merchant</div>
+        <ul class="sidebar-nav">
+            <li>
+                <a th:href="@{/merchant}"
+                   th:classappend="${active == 'merchant'} ? 'active'">Overview</a>
+            </li>
+            <li>
+                <a th:href="@{/merchant(merchantId=${selectedMerchantId})}"
+                   th:classappend="${active == 'merchant-payments'} ? 'active'">Payments</a>
+            </li>
+            <li>
+                <a th:href="@{/merchant(merchantId=${selectedMerchantId})}"
+                   th:classappend="${active == 'merchant-settlements'} ? 'active'">Settlements</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-heading">Admin</div>
+        <ul class="sidebar-nav">
+            <li>
+                <a th:href="@{/admin}"
+                   th:classappend="${active == 'admin'} ? 'active'">Merchants</a>
+            </li>
+            <li>
+                <a th:href="@{/admin}"
+                   th:classappend="${active == 'admin-payments'} ? 'active'">Payments</a>
+            </li>
+            <li>
+                <a th:href="@{/admin}"
+                   th:classappend="${active == 'admin-settlements'} ? 'active'">Settlements</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-heading">Developer</div>
+        <ul class="sidebar-nav">
+            <li>
+                <a th:href="@{/developer(merchantId=${selectedMerchantId})}"
+                   th:classappend="${active == 'developer'} ? 'active'">API Keys</a>
+            </li>
+            <li>
+                <a th:href="@{/developer(merchantId=${selectedMerchantId})}"
+                   th:classappend="${active == 'developer-docs'} ? 'active'">Docs</a>
+            </li>
+            <li>
+                <a th:href="@{/developer(merchantId=${selectedMerchantId})}"
+                   th:classappend="${active == 'developer-sandbox'} ? 'active'">Sandbox</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="sidebar-footer">
+        <span th:text="${@environment.getProperty('portal.environment-label', 'Sandbox')} + ' environment'">Sandbox environment</span>
+    </div>
+</aside>
+
+<header class="topbar" th:fragment="topbar(title, action, showMerchantSelector)">
+    <h1 class="topbar-title" th:text="${title}">Page title</h1>
+    <div class="topbar-actions">
+        <span class="env-badge"
+              th:text="${@environment.getProperty('portal.environment-label', 'Sandbox')}">Sandbox</span>
+        <form class="merchant-selector"
+              method="get"
+              th:action="${action}"
+              th:if="${showMerchantSelector and merchants != null and !merchants.isEmpty()}">
+            <label for="merchantSelect">Merchant</label>
+            <select id="merchantSelect" name="merchantId" onchange="this.form.submit()">
+                <option th:each="m : ${merchants}"
+                        th:value="${m.id}"
+                        th:text="${m.name}"
+                        th:selected="${m.id == selectedMerchantId}">Merchant</option>
+            </select>
+            <noscript>
+                <button type="submit" class="btn btn-secondary btn-sm">Go</button>
+            </noscript>
+        </form>
+    </div>
+</header>
+
+<div th:fragment="flash">
+    <div class="alert alert-success" th:if="${success}" th:text="${success}">Success message</div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}">Error message</div>
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${success} ? 'Payment successful | PayGate' : 'Payment failed | PayGate'">Payment result | PayGate</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+
+<body class="checkout-body">
+<div class="checkout-shell">
+
+    <div class="checkout-brand">
+        <span class="brand-mark">P</span>
+        <span>Pay<span class="brand-accent">Gate</span></span>
+    </div>
+
+    <div class="checkout-card">
+
+        <div th:if="${success}">
+            <div class="alert alert-success">Your payment was completed successfully.</div>
+
+            <p class="checkout-merchant"
+               th:text="${merchantName != null} ? ${merchantName} : 'Merchant'">Merchant</p>
+
+            <p class="checkout-amount" th:if="${payment != null}">
+                <span th:text="${payment['currency']}">INR</span>
+                <span th:text="${#numbers.formatDecimal(payment['amount'] / 100.0, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+            </p>
+
+            <div class="table-wrap" th:if="${payment != null}">
+                <table>
+                    <tbody>
+                    <tr>
+                        <th>Status</th>
+                        <td>
+                            <span class="pill"
+                                  th:classappend="${'pill-' + #strings.toLowerCase(payment['status'])}"
+                                  th:text="${payment['status']}">CAPTURED</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Payment ID</th>
+                        <td class="mono" th:text="${payment['id']}">payment-id</td>
+                    </tr>
+                    <tr th:if="${payment['cardLast4'] != null}">
+                        <th>Card</th>
+                        <td th:text="${payment['cardNetwork'] != null} ? ${payment['cardNetwork']} + ' ****' + ${payment['cardLast4']} : '****' + ${payment['cardLast4']}">VISA ****1111</td>
+                    </tr>
+                    <tr th:if="${payment['acquirerReference'] != null}">
+                        <th>Acquirer reference</th>
+                        <td class="mono" th:text="${payment['acquirerReference']}">ACQ-REF</td>
+                    </tr>
+                    <tr th:if="${payment['description'] != null and !#strings.isEmpty(payment['description'])}">
+                        <th>Description</th>
+                        <td th:text="${payment['description']}">Payment description</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div th:unless="${success}">
+            <div class="alert alert-error"
+                 th:text="${error != null} ? ${error} : 'Your payment could not be completed.'">Your payment could not be completed.</div>
+
+            <p class="checkout-merchant"
+               th:if="${merchantName != null}"
+               th:text="${merchantName}">Merchant</p>
+
+            <p class="checkout-amount" th:if="${payment != null}">
+                <span th:text="${payment['currency']}">INR</span>
+                <span th:text="${#numbers.formatDecimal(payment['amount'] / 100.0, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+            </p>
+
+            <div class="table-wrap" th:if="${payment != null}">
+                <table>
+                    <tbody>
+                    <tr>
+                        <th>Status</th>
+                        <td>
+                            <span class="pill"
+                                  th:classappend="${'pill-' + #strings.toLowerCase(payment['status'])}"
+                                  th:text="${payment['status']}">FAILED</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Payment ID</th>
+                        <td class="mono" th:text="${payment['id']}">payment-id</td>
+                    </tr>
+                    <tr th:if="${payment['failureReason'] != null}">
+                        <th>Failure reason</th>
+                        <td th:text="${payment['failureReason']}">Declined by issuer</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4" th:if="${payment != null and payment['id'] != null and payment['status'] != 'CAPTURED' and payment['status'] != 'BLOCKED'}">
+                <a class="btn btn-block"
+                   th:href="@{/checkout/{id}(id=${payment['id']})}">Try again</a>
+            </div>
+        </div>
+
+        <p class="checkout-secure mt-4">
+            <a th:href="@{/developer}">Back to developer dashboard</a>
+        </p>
+    </div>
+
+    <p class="checkout-footer">
+        Powered by PayGate &middot;
+        <span th:text="${@environment.getProperty('portal.environment-label', 'Sandbox')}">Sandbox</span>
+    </p>
+</div>
+</body>
+
+</html>

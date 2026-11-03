@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head(${pageTitle})}"></head>
+
+<body>
+<div class="app-shell">
+
+    <aside th:replace="~{fragments/layout :: sidebar(${activeNav})}"></aside>
+
+    <div class="main">
+
+        <header th:replace="~{fragments/layout :: topbar(${pageTitle}, '/developer', true)}"></header>
+
+        <main class="content">
+
+            <div th:replace="~{fragments/layout :: flash}"></div>
+
+            <div class="page-header">
+                <div>
+                    <h1>Developer tools</h1>
+                    <p>Manage API keys, explore the API reference and test payments in the sandbox.</p>
+                </div>
+                <a class="btn btn-outline"
+                   th:href="@{/developer(merchantId=${selectedMerchantId})}">Refresh</a>
+            </div>
+
+            <section class="section" id="api-keys">
+                <div class="section-header">
+                    <h2>API Keys</h2>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div th:if="${selectedMerchant != null}">
+                            <p class="muted">
+                                Public key identifier for
+                                <strong th:text="${selectedMerchant['name']}">Merchant</strong>.
+                                Use it to identify your integration when calling the platform API.
+                            </p>
+                            <div class="api-key-box">
+                                <div>
+                                    <p class="kpi-label mb-0">Key ID</p>
+                                    <code th:text="${selectedMerchant['keyId'] != null} ? ${selectedMerchant['keyId']} : 'Not assigned'">pg_key_xxx</code>
+                                </div>
+                                <span class="pill"
+                                      th:classappend="${'pill-' + #strings.toLowerCase(selectedMerchant['kycStatus'])}"
+                                      th:text="'KYC ' + ${selectedMerchant['kycStatus']}">KYC VERIFIED</span>
+                            </div>
+                            <p class="form-hint mt-2">
+                                Merchant ID:
+                                <span class="mono" th:text="${selectedMerchant['id']}">merchant-id</span>
+                            </p>
+                        </div>
+                        <div th:if="${selectedMerchant == null}" class="empty-state">
+                            No merchant selected. Onboard a merchant from the Admin dashboard to get an API key.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="docs">
+                <div class="section-header">
+                    <h2>Docs</h2>
+                    <span class="muted">Base URL
+                        <code th:text="${paymentsUrl}">http://localhost:8081</code>
+                    </span>
+                </div>
+
+                <div class="two-col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Endpoint reference</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="endpoint-list">
+                                <li class="endpoint-item">
+                                    <span class="method-badge method-post">POST</span>
+                                    <div>
+                                        <div class="endpoint-path">/api/v1/merchants</div>
+                                        <p class="endpoint-desc">Onboard a merchant and run KYC against the sandbox.</p>
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="method-badge method-get">GET</span>
+                                    <div>
+                                        <div class="endpoint-path">/api/v1/merchants/{id}</div>
+                                        <p class="endpoint-desc">Fetch a merchant by id.</p>
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="method-badge method-post">POST</span>
+                                    <div>
+                                        <div class="endpoint-path">/api/v1/merchants/{id}/kyc</div>
+                                        <p class="endpoint-desc">Re-run KYC verification for a merchant.</p>
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="method-badge method-post">POST</span>
+                                    <div>
+                                        <div class="endpoint-path">/api/v1/payments</div>
+                                        <p class="endpoint-desc">Create a payment in CREATED status for a KYC-verified merchant.</p>
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="method-badge method-post">POST</span>
+                                    <div>
+                                        <div class="endpoint-path">/api/v1/payments/{id}/pay</div>
+                                        <p class="endpoint-desc">Run the risk check and authorize with card details.</p>
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="method-badge method-post">POST</span>
+                                    <div>
+                                        <div class="endpoint-path">/api/v1/payments/{id}/capture</div>
+                                        <p class="endpoint-desc">Capture an authorized payment and post it to the ledger.</p>
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="method-badge method-get">GET</span>
+                                    <div>
+                                        <div class="endpoint-path">/api/v1/payments/{id}</div>
+                                        <p class="endpoint-desc">Fetch a payment by id.</p>
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="method-badge method-get">GET</span>
+                                    <div>
+                                        <div class="endpoint-path">/api/v1/payments?merchantId={id}</div>
+                                        <p class="endpoint-desc">List payments, optionally filtered by merchant.</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Sample requests</h3>
+                        </div>
+                        <div class="card-body">
+                            <h3>Create a payment</h3>
+                            <pre><code>{
+  "merchantId": "&lt;merchant-id&gt;",
+  "amount": 49900,
+  "currency": "INR",
+  "customerEmail": "customer@example.com",
+  "description": "Order #1001"
+}</code></pre>
+
+                            <h3>Authorize a payment</h3>
+                            <pre><code>{
+  "cardNumber": "4111111111111111",
+  "expiry": "12/30",
+  "cvv": "123",
+  "cardholderName": "Test Customer"
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3>curl examples</h3>
+                    </div>
+                    <div class="card-body">
+                        <h3>Create a payment</h3>
+                        <pre><code th:text="${createPaymentCurl}">curl -X POST http://localhost:8081/api/v1/payments</code></pre>
+
+                        <h3>Authorize a payment</h3>
+                        <pre><code th:text="${payCurl}">curl -X POST http://localhost:8081/api/v1/payments/PAYMENT_ID/pay</code></pre>
+
+                        <h3>Capture a payment</h3>
+                        <pre><code th:text="${captureCurl}">curl -X POST http://localhost:8081/api/v1/payments/PAYMENT_ID/capture</code></pre>
+
+                        <h3>Fetch a payment</h3>
+                        <pre><code th:text="${getCurl}">curl http://localhost:8081/api/v1/payments/PAYMENT_ID</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="sandbox">
+                <div class="section-header">
+                    <h2>Sandbox</h2>
+                </div>
+
+                <div class="two-col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Test cards</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                    <tr>
+                                        <th>Card number</th>
+                                        <th>Outcome</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td class="mono">4111111111111111</td>
+                                        <td><span class="pill pill-approve">APPROVE</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="mono">4000000000000002</td>
+                                        <td><span class="pill pill-reject">DECLINE</span></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="form-hint mt-2">
+                                Use any future expiry date and any 3-digit CVV. Card numbers must pass the Luhn check.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Partner rules</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="endpoint-list">
+                                <li class="endpoint-item">
+                                    <div>
+                                        <div class="endpoint-path">Bank payout</div>
+                                        <p class="endpoint-desc">
+                                            A payout to an account number ending in
+                                            <code>0000</code> fails. Any other account succeeds and returns a UTR-style reference.
+                                        </p>
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <div>
+                                        <div class="endpoint-path">KYC verification</div>
+                                        <p class="endpoint-desc">
+                                            A business name containing
+                                            <code>reject</code> is rejected. Any other name is verified.
+                                        </p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4" id="test-payment">
+                    <div class="card-header">
+                        <h3>Create test payment</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" th:action="@{/developer/test-payment}"
+                              th:if="${selectedMerchant != null}">
+                            <input type="hidden" name="merchantId" th:value="${selectedMerchantId}">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="testAmount">Amount (minor units)</label>
+                                    <input type="number" id="testAmount" name="amount" min="1" value="49900" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="testCurrency">Currency</label>
+                                    <select id="testCurrency" name="currency">
+                                        <option value="INR" selected>INR</option>
+                                        <option value="USD">USD</option>
+                                        <option value="EUR">EUR</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="testEmail">Customer email</label>
+                                    <input type="email" id="testEmail" name="customerEmail"
+                                           value="test.customer@example.com" autocomplete="off">
+                                </div>
+                                <div class="form-group">
+                                    <label for="testDescription">Description</label>
+                                    <input type="text" id="testDescription" name="description"
+                                           value="Sandbox test payment" autocomplete="off">
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-block">Create and open checkout</button>
+                                </div>
+                            </div>
+                            <p class="form-hint mt-2">
+                                The payment is created for the selected merchant and opens the hosted checkout.
+                            </p>
+                        </form>
+                        <div th:if="${selectedMerchant == null}" class="empty-state">
+                            Select or onboard a merchant to create a test payment.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+</body>
+
+</html>
